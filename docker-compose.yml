@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  sql-server:
+    container_name: sql-server
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      MSSQL_SA_PASSWORD: "P@ssw0rd2024!"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "1433:1433"
+    volumes:
+      - ./init.sql:/scripts/init.sql
+    networks:
+      - my-network  
+    entrypoint: ["/bin/bash", "-c", "/opt/mssql/bin/sqlservr & sleep 15 && /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P P@ssw0rd2024! -i /scripts/init.sql && tail -f /dev/null"]
+      
+  cliente-persona-service:
+    container_name: cliente-persona-service
+    build:
+      context: C:\Users\ldavilan\Desktop\ServicesTest\servicios-e1\cliente-persona-service  # Ruta al directorio donde se encuentra tu servicio Java Maven
+      dockerfile: Dockerfile  # Nombre de tu Dockerfile para el servicio Java Maven
+    ports:
+      - "8082:8082" 
+    depends_on:
+      - sql-server  # Este servicio depende del contenedor del servidor SQL
+    networks:
+      - my-network
+      
+  cuenta-movimientos-service:
+    container_name: cuenta-movimientos-service
+    build:
+      context: C:\Users\ldavilan\Desktop\ServicesTest\servicios-e1\cuenta-movimientos-service  # Ruta al directorio donde se encuentra tu servicio Java Maven
+      dockerfile: Dockerfile  # Nombre de tu Dockerfile para el servicio Java Maven
+    ports:
+      - "8083:8083" 
+    depends_on:
+      - sql-server  # Este servicio depende del contenedor del servidor SQL
+    networks:
+      - my-network
+
+networks:
+  my-network:
+    driver: bridge
